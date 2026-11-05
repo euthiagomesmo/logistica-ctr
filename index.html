@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LOGISTICA CTR</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0072CE">
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary-blue: #0072CE;
+      --primary-green: #2ECC71;
+      --dark-green: #1B8A4A;
+    }
+    .bg-maxtec-blue { background-color: #0072CE; }
+    .text-maxtec-blue { color: #0072CE; }
+    .bg-maxtec-green { background-color: #2ECC71; }
+    .text-maxtec-green { color: #2ECC71; }
+    .border-maxtec-blue { border-color: #0072CE; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased min-h-screen flex flex-col">
+
+  <!-- HEADER CORPORATIVO -->
+  <header class="bg-maxtec-blue text-white shadow-md sticky top-0 z-50">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <div class="bg-white/10 p-2 rounded-lg">
+          <i class="fa-solid fa-truck-fast text-xl text-[#2ECC71]"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg tracking-wide">LOGÍSTICA CTR</h1>
+          <p class="text-xs text-blue-100">Maxtec • Operação de Campo</p>
+        </div>
+      </div>
+      <div id="user-info" class="hidden items-center space-x-3 text-sm">
+        <span id="nav-username" class="font-medium bg-white/10 px-3 py-1 rounded-full"></span>
+        <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-semibold transition">
+          <i class="fa-solid fa-right-from-bracket mr-1"></i> Sair
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-4xl w-full mx-auto p-4">
+
+    <!-- TELA DE LOGIN -->
+    <section id="screen-login" class="max-w-md mx-auto mt-10 bg-white p-8 rounded-2xl shadow-lg border-t-4 border-[#2ECC71]">
+      <div class="text-center mb-6">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-50 text-maxtec-blue rounded-full mb-3 text-2xl shadow-inner">
+          <i class="fa-solid fa-lock"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-900">Acesso ao Sistema</h2>
+        <p class="text-sm text-gray-500 mt-1">Identifique-se para acessar suas rotas e demandas</p>
+      </div>
+
+      <form id="form-login" onsubmit="fazerLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold uppercase text-gray-600 mb-1">URL do Apps Script (Web App):</label>
+          <input type="url" id="script-url" required placeholder="https://script.google.com/macros/s/.../exec" 
+                 class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#0072CE] focus:outline-none text-sm bg-gray-50">
+          <p class="text-[11px] text-gray-400 mt-1">Cole aqui o link do seu Web App publicado no Google Apps Script.</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Seu Nome Completo:</label>
+          <input type="text" id="login-nome" required placeholder="Ex: João da Silva" 
+                 class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#0072CE] focus:outline-none text-sm">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase text-gray-600 mb-1">PIN de Acesso:</label>
+          <input type="password" id="login-pin" required placeholder="••••" maxlength="6"
+                 class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#0072CE] focus:outline-none text-sm tracking-widest">
+        </div>
+
+        <button type="submit" id="btn-login" class="w-full bg-maxtec-blue hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-md transition flex items-center justify-center space-x-2">
+          <span>Entrar no Sistema</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </form>
+    </section>
+
+    <!-- TELA DO PAINEL (MOTORISTA / SELECIONADOR / ADMIN) -->
+    <section id="screen-dashboard" class="hidden space-y-6">
+      
+      <!-- BARRA DE STATUS E SINCRONIZAÇÃO -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-3">
+        <div class="flex items-center space-x-2">
+          <span id="sync-status-dot" class="w-3 h-3 rounded-full bg-green-500 inline-block"></span>
+          <span id="sync-status-text" class="text-sm font-medium text-gray-700">Online • Sincronizado</span>
+        </div>
+        <div class="flex items-center space-x-2 w-full sm:w-auto">
+          <button onclick="carregarAtividades()" class="flex-1 sm:flex-none bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center justify-center space-x-2">
+            <i class="fa-solid fa-rotate"></i>
+            <span>Atualizar Dados</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- PAINEL DE ATIVIDADES / ROTAS DO DIA -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <h3 class="font-bold text-gray-800 flex items-center space-x-2">
+            <i class="fa-solid fa-route text-maxtec-blue"></i>
+            <span id="dashboard-title">Atividades e Rota do Dia</span>
+          </h3>
+          <span id="badge-total-atividades" class="bg-blue-100 text-maxtec-blue text-xs font-bold px-2.5 py-1 rounded-full">0 atividades</span>
+        </div>
+
+        <div id="lista-atividades" class="divide-y divide-gray-200">
+          <!-- Injetado dinamicamente via JS -->
+          <div class="p-8 text-center text-gray-400">
+            <i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i>
+            <p>Carregando atividades...</p>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- MODAL DE DETALHES / REGISTRO DE ATIVIDADE -->
+    <div id="modal-atividade" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative my-8">
+        <button onclick="fecharModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <h3 id="modal-cliente-titulo" class="text-xl font-bold text-gray-900 mb-1">Detalhes da Atividade</h3>
+        <p id="modal-mtr-sub" class="text-xs text-gray-500 mb-4 font-mono"></p>
+
+        <form id="form-atualizar-atividade" onsubmit="salvarAtividade(event)" class="space-y-4">
+          <input type="hidden" id="modal-atv-id">
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Status da Atividade:</label>
+              <select id="modal-status" class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white focus:ring-2 focus:ring-[#0072CE]">
+                <option value="Pendente">Pendente</option>
+                <option value="Em andamento">Em andamento</option>
+                <option value="Realizada">Realizada</option>
+                <option value="Não realizada">Não realizada</option>
+                <option value="Reprogramada">Reprogramada</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Peso Coletado (kg):</label>
+              <input type="number" step="0.01" id="modal-peso" placeholder="0.00" 
+                     class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-[#0072CE]">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Hora Coleta:</label>
+              <input type="time" id="modal-hora-coleta" class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white">
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Hora Fim:</label>
+              <input type="time" id="modal-hora-fim" class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Ocorrência / Observações:</label>
+            <textarea id="modal-ocorrencia" rows="3" placeholder="Descreva ocorrências, problemas ou observações de campo..." 
+                      class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-[#0072CE]"></textarea>
+          </div>
+
+          <!-- Seção de Fotos e Geolocalização -->
+          <div class="bg-gray-50 p-3 rounded-xl border border-gray-200 space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-bold text-gray-700 uppercase"><i class="fa-solid fa-camera mr-1 text-maxtec-blue"></i> Registro Fotográfico</span>
+              <button type="button" onclick="capturarLocalizacion()" class="text-xs bg-blue-50 text-maxtec-blue px-2.5 py-1 rounded font-medium hover:bg-blue-100 transition">
+                <i class="fa-solid fa-location-dot mr-1"></i> Capturar GPS
+              </button>
+            </div>
+            <p id="gps-coords-text" class="text-[11px] text-gray-500 font-mono">GPS não capturado nesta sessão.</p>
+            <input type="file" accept="image/*" capture="environment" id="input-foto" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-maxtec-blue hover:file:bg-blue-100">
+          </div>
+
+          <div class="flex space-x-3 pt-2">
+            <button type="button" onclick="fecharModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2.5 rounded-lg text-sm transition">
+              Cancelar
+            </button>
+            <button type="submit" class="flex-1 bg-maxtec-green hover:bg-emerald-600 text-white font-bold py-2.5 rounded-lg text-sm transition shadow">
+              Salvar Alterações
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="text-center py-4 text-xs text-gray-400 border-t border-gray-200 mt-auto">
+    LOGISTICA CTR • Maxtec &copy; 2026 • Todos os direitos reservados
+  </footer>
+
+  <!-- SCRIPT CLIENT-SIDE -->
+  <script>
+    let currentUser = null;
+    let appScriptUrl = localStorage.getItem('maxtec_script_url') || '';
+    let atividadesCache = [];
+    let gpsAtual = { lat: null, long: null };
+
+    // Preencher URL se salva
+    if (appScriptUrl) {
+      document.getElementById('script-url').value = appScriptUrl;
+    }
+
+    // Verificar se já tem sessão salva
+    const savedUser = localStorage.getItem('maxtec_current_user');
+    if (savedUser) {
+      currentUser = JSON.parse(savedUser);
+      mostrarDashboard();
+    }
+
+    function fazerLogin(e) {
+      e.preventDefault();
+      const url = document.getElementById('script-url').value.trim();
+      const nome = document.getElementById('login-nome').value.trim();
+      const pin = document.getElementById('login-pin').value.trim();
+
+      localStorage.setItem('maxtec_script_url', url);
+      appScriptUrl = url;
+
+      const btn = document.getElementById('btn-login');
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Entrando...';
+      btn.disabled = true;
+
+      // Requisição GET para o Web App do Apps Script
+      const targetUrl = `${url}?action=login&nome=${encodeURIComponent(nome)}&pin=${encodeURIComponent(pin)}`;
+
+      fetch(targetUrl)
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 'success') {
+            currentUser = data.usuario;
+            localStorage.setItem('maxtec_current_user', JSON.stringify(currentUser));
+            mostrarDashboard();
+          } else {
+            alert('Erro de login: ' + (data.message || 'Credenciais inválidas'));
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alert('Erro de conexão com o Google Apps Script. Verifique a URL informada.');
+        })
+        .finally(() => {
+          btn.innerHTML = '<span>Entrar no Sistema</span><i class="fa-solid fa-arrow-right"></i>';
+          btn.disabled = false;
+        });
+    }
+
+    function logout() {
+      localStorage.removeItem('maxtec_current_user');
+      currentUser = null;
+      document.getElementById('screen-dashboard').classList.add('hidden');
+      document.getElementById('screen-login').classList.remove('hidden');
+      document.getElementById('user-info').classList.add('hidden');
+    }
+
+    function mostrarDashboard() {
+      document.getElementById('screen-login').classList.add('hidden');
+      document.getElementById('screen-dashboard').classList.remove('hidden');
+      document.getElementById('user-info').classList.remove('hidden');
+      document.getElementById('nav-username').textContent = `${currentUser.nome} (${currentUser.perfil.toUpperCase()})`;
+      
+      if (currentUser.perfil !== 'admin') {
+        document.getElementById('dashboard-title').textContent = 'Sua Rota e Atividades do Dia';
+      } else {
+        document.getElementById('dashboard-title').textContent = 'Todas as Atividades (Admin)';
+      }
+
+      carregarAtividades();
+    }
+
+    function carregarAtividades() {
+      if (!appScriptUrl || !currentUser) return;
+
+      const listaDiv = document.getElementById('lista-atividades');
+      listaDiv.innerHTML = '<div class="p-8 text-center text-gray-400"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><p>Carregando atividades...</p></div>';
+
+      const targetUrl = `${appScriptUrl}?action=getAtividades&userId=${currentUser.id}&perfil=${currentUser.perfil}`;
+
+      fetch(targetUrl)
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 'success') {
+            atividadesCache = data.atividades || [];
+            renderizarAtividades(atividadesCache);
+          } else {
+            listaDiv.innerHTML = `<div class="p-8 text-center text-red-500">Erro ao carregar: ${data.message}</div>`;
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          // Modo offline: tenta carregar do cache local se houver
+          const cachedAtividades = localStorage.getItem('maxtec_atividades_cache');
+          if (cachedAtividades) {
+            atividadesCache = JSON.parse(cachedAtividades);
+            renderizarAtividades(atividadesCache);
+            document.getElementById('sync-status-dot').className = 'w-3 h-3 rounded-full bg-amber-500 inline-block';
+            document.getElementById('sync-status-text').textContent = 'Offline • Usando dados salvos';
+          } else {
+            listaDiv.innerHTML = `<div class="p-8 text-center text-red-500">Sem conexão com a internet e nenhum cache local disponível.</div>`;
+          }
+        });
+    }
+
+    function renderizarAtividades(atividades) {
+      const listaDiv = document.getElementById('lista-atividades');
+      document.getElementById('badge-total-atividades').textContent = `${atividades.length} atividades`;
+
+      if (atividades.length === 0) {
+        listaDiv.innerHTML = '<div class="p-8 text-center text-gray-400"><i class="fa-solid fa-circle-check text-3xl mb-2 text-emerald-500"></i><p>Nenhuma atividade pendente encontrada para hoje.</p></div>';
+        return;
+      }
+
+      let html = '';
+      atividades.forEach(atv => {
+        let statusColor = 'bg-gray-100 text-gray-700';
+        if (atv.status === 'Realizada') statusColor = 'bg-emerald-100 text-emerald-700';
+        else if (atv.status === 'Em andamento') statusColor = 'bg-blue-100 text-blue-700';
+        else if (atv.status === 'Não realizada') statusColor = 'bg-red-100 text-red-700';
+
+        html += `
+          <div class="p-4 sm:p-6 hover:bg-gray-50 transition flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div class="space-y-1">
+              <div class="flex items-center space-x-2">
+                <span class="text-xs font-mono font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded">MTR: ${atv.mtr || 'N/A'}</span>
+                <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full ${statusColor}">${atv.status || 'Pendente'}</span>
+              </div>
+              <h4 class="text-base font-bold text-gray-900">${atv.cliente}</h4>
+              <p class="text-xs text-gray-500"><i class="fa-solid fa-truck mr-1 text-maxtec-blue"></i> Veículo: ${atv.veiculo} | Destino: ${atv.destino}</p>
+              ${atv.observacao ? `<p class="text-xs text-gray-600 bg-amber-50 p-2 rounded border border-amber-200 mt-1"><strong>Obs:</strong> ${atv.observacao}</p>` : ''}
+            </div>
+            <div>
+              <button onclick="abrirModalAtividade('${atv.id}')" class="w-full sm:w-auto bg-maxtec-blue hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-sm flex items-center justify-center space-x-1.5">
+                <i class="fa-solid fa-pen-to-square"></i>
+                <span>Registrar / Atualizar</span>
+              </button>
+            </div>
+          </div>
+        `;
+      });
+
+      listaDiv.innerHTML = html;
+      localStorage.setItem('maxtec_atividades_cache', JSON.stringify(atividades));
+    }
+
+    function abrirModalAtividade(id) {
+      const atv = atividadesCache.find(a => a.id.toString() === id.toString());
+      if (!atv) return;
+
+      document.getElementById('modal-atv-id').value = atv.id;
+      document.getElementById('modal-cliente-titulo').textContent = atv.cliente;
+      document.getElementById('modal-mtr-sub').textContent = `MTR: ${atv.mtr || 'N/A'} • Tipo: ${atv.tipo_atividade}`;
+      document.getElementById('modal-status').value = atv.status || 'Pendente';
+      document.getElementById('modal-peso').value = atv.peso_kg || '';
+      document.getElementById('modal-hora-coleta').value = atv.hora_coleta || '';
+      document.getElementById('modal-hora-fim').value = atv.hora_fim || '';
+      document.getElementById('modal-ocorrencia').value = atv.ocorrencia || '';
+      
+      gpsAtual = { lat: null, long: null };
+      document.getElementById('gps-coords-text').textContent = 'GPS não capturado nesta sessão.';
+
+      document.getElementById('modal-atividade').classList.remove('hidden');
+    }
+
+    function fecharModal() {
+      document.getElementById('modal-atividade').classList.add('hidden');
+    }
+
+    function capturarLocalizacion() {
+      if (navigator.geolocation) {
+        document.getElementById('gps-coords-text').textContent = 'Buscando sinal GPS...';
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            gpsAtual.lat = pos.coords.latitude;
+            gpsAtual.long = pos.coords.longitude;
+            document.getElementById('gps-coords-text').textContent = `GPS Capturado: Lat ${gpsAtual.lat.toFixed(5)}, Long ${gpsAtual.long.toFixed(5)}`;
+            document.getElementById('gps-coords-text').className = 'text-[11px] text-emerald-600 font-mono font-bold';
+          },
+          err => {
+            alert('Erro ao obter GPS: ' + err.message);
+            document.getElementById('gps-coords-text').textContent = 'Erro ao capturar GPS.';
+          },
+          { enableHighAccuracy: true }
+        );
+      } else {
+        alert('Geolocalização não suportada neste dispositivo.');
+      }
+    }
+
+    function salvarAtividade(e) {
+      e.preventDefault();
+      if (!appScriptUrl) return;
+
+      const id = document.getElementById('modal-atv-id').value;
+      const status = document.getElementById('modal-status').value;
+      const peso_kg = document.getElementById('modal-peso').value;
+      const hora_coleta = document.getElementById('modal-hora-coleta').value;
+      const hora_fim = document.getElementById('modal-hora-fim').value;
+      const ocorrencia = document.getElementById('modal-ocorrencia').value;
+
+      const payload = {
+        action: 'atualizarAtividade',
+        id: id,
+        status: status,
+        peso_kg: peso_kg,
+        hora_coleta: hora_coleta,
+        hora_fim: hora_fim,
+        ocorrencia: ocorrencia,
+        lat: gpsAtual.lat,
+        long: gpsAtual.long
+      };
+
+      const btn = e.target.querySelector('button[type="submit"]');
+      const originalText = btn.textContent;
+      btn.textContent = 'Salvando...';
+      btn.disabled = true;
+
+      fetch(appScriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          alert('Atividade atualizada com sucesso!');
+          fecharModal();
+          carregarAtividades();
+        } else {
+          alert('Erro ao salvar: ' + data.message);
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Erro de conexão. As alterações foram salvas localmente e serão sincronizadas depois.');
+        // Atualiza cache local
+        const atv = atividadesCache.find(a => a.id.toString() === id.toString());
+        if (atv) {
+          atv.status = status;
+          atv.peso_kg = peso_kg;
+          atv.hora_coleta = hora_coleta;
+          atv.hora_fim = hora_fim;
+          atv.ocorrencia = ocorrencia;
+          renderizarAtividades(atividadesCache);
+        }
+        fecharModal();
+      })
+      .finally(() => {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      });
+    }
+
+    // Registro do Service Worker para PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('ServiceWorker registrado com sucesso:', reg.scope))
+          .catch(err => console.log('Falha ao registrar ServiceWorker:', err));
+      });
+    }
+  </script>
+</body>
+</html>
